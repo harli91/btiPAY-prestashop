@@ -1,8 +1,44 @@
-# btipay/config/front/services.yml
 imports:
   - { resource: ../common.yml }
 
 services:
+  btipay.payment_flow.service:
+    class: BTiPay\Service\Payment\PaymentFlowService
+    public: true
+    arguments:
+      - '@btipay.config'
+      - '@btipay.facade.context'
+      - '@btipay.logger'
+      - '@btipay.order.command'
+      - '@btipay.authorize.command'
+      - '@btipay.validator.availability'
+
+  btipay.return_flow.service:
+    class: BTiPay\Service\Payment\ReturnFlowService
+    public: true
+    arguments:
+      - '@btipay.payment_repository'
+      - '@btipay.facade.context'
+      - '@btipay.payment_details.command'
+
+  btipay.account_flow.service:
+    class: BTiPay\Service\Account\AccountFlowService
+    public: true
+    arguments:
+      - '@btipay.config'
+      - '@btipay.card_repository'
+      - '@btipay.facade.context'
+      - '@btipay.card.service'
+      - '@btipay.payment_details.service'
+
+  btipay.webhook_flow.service:
+    class: BTiPay\Service\Webhook\WebhookFlowService
+    public: true
+    arguments:
+      - '@btipay.webhook.service'
+      - '@btipay.logger'
+      - '@btipay.config'
+
   btipay.validator.availability:
     class: BTiPay\Validator\Availability\AvailabilityValidatorPool
     public: true

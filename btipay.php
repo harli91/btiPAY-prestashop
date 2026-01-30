@@ -44,12 +44,26 @@ class Btipay extends PaymentModule
      * @var array|string[]
      */
     private array $limited_currencies;
+    private ?BTiPay\Service\ModuleServices $moduleServices = null;
+
+    public function getService(string $serviceId)
+    {
+        return $this->get($serviceId);
+    }
+
+    private function getModuleServices(): BTiPay\Service\ModuleServices
+    {
+        if ($this->moduleServices === null) {
+            $this->moduleServices = $this->get('btipay.module.services');
+        }
+        return $this->moduleServices;
+    }
 
     public function __construct()
     {
         $this->name = 'btipay';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.1';
+        $this->version = '2.0.0';
         $this->author = 'Banca Transilvania';
         $this->need_instance = 1;
 
@@ -61,12 +75,12 @@ class Btipay extends PaymentModule
         parent::__construct();
 
         $this->displayName = $this->l('BT iPay');
-        $this->description = $this->l('BT iPay Prestashop Payment Module. Compatible with Prestashop version 1.7.6 - 8.1.5');
+        $this->description = $this->l('BT iPay Prestashop Payment Module. Compatible with Prestashop 9.x');
 
         $this->confirmUninstall = $this->l('Are you sure you want to unistall the payment module BT iPay?');
         $this->limited_currencies = ['RON', 'EUR', 'USD'];
 
-        $this->ps_versions_compliancy = ['min' => '1.7.6', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '9.0.0', 'max' => '9.99.99'];
 
         $this->generalSettingsHelper = new GeneralSettingsHelper($this);
         $this->paymentSettingsHelper = new PaymentSettingsHelper($this);
@@ -235,17 +249,13 @@ class Btipay extends PaymentModule
         ];
     }
 
-    public function hookActionGetAdminOrderButtons(array $params)
+    public function hookActionGetAdminOrderButtons(array $params): void
     {
-        if (version_compare(_PS_VERSION_, '8.0.0', '>=')) {
-            $this->addOrderButtonPrestashop8($params['actions_bar_buttons_collection'], $params['id_order']);
-        } else {
-            $this->addOrderButtonPrestashop17($params['actions_bar_buttons_collection'], $params['id_order']);
-        }
+        $this->addOrderButtons($params['actions_bar_buttons_collection'], $params['id_order']);
     }
 
-    private function addOrderButtonPrestashop8(\PrestaShop\PrestaShop\Core\Action\ActionsBarButtonsCollection $bar, $orderId) {
-
+    private function addOrderButtons(\PrestaShop\PrestaShop\Core\Action\ActionsBarButtonsCollection $bar, int $orderId): void
+    {
         $paymentRepository = new BTiPay\Repository\PaymentRepository();
         $payments = $paymentRepository->findByOrderId($orderId);
 
@@ -257,7 +267,7 @@ class Btipay extends PaymentModule
         if ($paymentStatus) {
             $buttons = [];
             if ($paymentStatus == IPayStatuses::STATUS_APPROVED) {
-                $buttons['captureButton'] = $this->generateButtonPrestashop8(
+                $buttons['captureButton'] = $this->generateButton(
                     'btn-info bt-button', [
                     'type' => 'button',
                     'data-order-id' => $orderId,
@@ -267,7 +277,7 @@ class Btipay extends PaymentModule
                 ], 'Capture BT iPay'
                 );
 
-                $buttons['cancelButton'] = $this->generateButtonPrestashop8(
+                $buttons['cancelButton'] = $this->generateButton(
                     'btn-info bt-button', [
                     'type' => 'button',
                     'data-order-id' => $orderId,
@@ -278,10 +288,9 @@ class Btipay extends PaymentModule
                 );
             } elseif (in_array($paymentStatus, [IPayStatuses::STATUS_DEPOSITED, IPayStatuses::STATUS_PARTIALLY_REFUNDED])) {
                 try {
-                    /** @var BTiPay\Config\BTiPayConfig $config */
-                    $config = $this->get('btipay.config');
+                    $config = $this->getModuleServices()->getConfig();
                     if ($config->isCustomRefundEnabled()) {
-                        $buttons['refundButton'] = $this->generateButtonPrestashop8(
+                        $buttons['refundButton'] = $this->generateButton(
                             'btn-info bt-button', [
                             'type' => 'button',
                             'data-order-id' => $orderId,
@@ -304,76 +313,9 @@ class Btipay extends PaymentModule
         }
     }
 
-    private function addOrderButtonPrestashop17(\PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButtonsCollection $bar, $orderId) {
-
-        $paymentRepository = new BTiPay\Repository\PaymentRepository();
-        $payments = $paymentRepository->findByOrderId($orderId);
-
-        $paymentStatus = null;
-        if (is_array($payments) && !empty($payments)) {
-            $paymentStatus = $paymentRepository->getCombinedStatus($payments);
-        }
-
-        if ($paymentStatus) {
-            $buttons = [];
-            if ($paymentStatus == IPayStatuses::STATUS_APPROVED) {
-                $buttons['captureButton'] = $this->generateButtonPrestashop17(
-                    'btn-info bt-button', [
-                    'type' => 'button',
-                    'data-order-id' => $orderId,
-                    'data-action-command' => 'capture',
-                    'data-toggle' => 'modal',
-                    'data-target' => '#amountModal',
-                ], 'Capture BT iPay'
-                );
-
-                $buttons['cancelButton'] = new PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
-                    'btn-info bt-button', [
-                    'type' => 'button',
-                    'data-order-id' => $orderId,
-                    'data-action-command' => 'cancel',
-                    'data-toggle' => 'modal',
-                    'data-target' => '#amountModal',
-                ], 'Cancel BT iPay'
-                );
-            } elseif (in_array($paymentStatus, [IPayStatuses::STATUS_DEPOSITED, IPayStatuses::STATUS_PARTIALLY_REFUNDED])) {
-                try {
-                    /** @var BTiPay\Config\BTiPayConfig $config */
-                    $config = $this->get('btipay.config');
-                    if ($config->isCustomRefundEnabled()) {
-                        $buttons['refundButton'] = $this->generateButtonPrestashop17(
-                            'btn-info bt-button', [
-                            'type' => 'button',
-                            'data-order-id' => $orderId,
-                            'data-action-command' => 'refund',
-                            'data-toggle' => 'modal',
-                            'data-target' => '#amountModal',
-                        ], 'Refund BT iPay'
-                        );
-                    }
-                } catch (Exception $e) {
-                    $this->clearCache();
-                    $this->getLogger()->error($e->getMessage());
-                    throw new OrderException(' We have refreshed the cache. Please try to view the order again by refreshing the page.');
-                }
-            }
-
-            foreach ($buttons as $button) {
-                $bar->add($button);
-            }
-        }
-    }
-
-    private function generateButtonPrestashop8(string $class = '', array $properties = [], string $content = '') {
-        return new \PrestaShop\PrestaShop\Core\Action\ActionsBarButton(
-            $class, $properties, $content
-        );
-    }
-
-    private function generateButtonPrestashop17(string $class = '', array $properties = [], string $content = '') {
-        return new \PrestaShopBundle\Controller\Admin\Sell\Order\ActionsBarButton(
-            $class, $properties, $content
-        );
+    private function generateButton(string $class, array $properties, string $content): \PrestaShop\PrestaShop\Core\Action\ActionsBarButton
+    {
+        return new \PrestaShop\PrestaShop\Core\Action\ActionsBarButton($class, $properties, $content);
     }
 
     public function hookDisplayAdminOrder($params)
@@ -382,14 +324,14 @@ class Btipay extends PaymentModule
         $api_urls = [];
 
         try {
-            $router = $this->get('router');
-
-            $paymentRepository = new BTiPay\Repository\PaymentRepository();
+            $services = $this->getModuleServices();
+            $router = $services->getRouter();
+            $paymentRepository = $services->getPaymentRepository();
 
             $maxTotalAmountPaid = $paymentRepository->getTotalCaptureAmountByOrderId($params['id_order']);
             $approvedAmount = $paymentRepository->getTotalApprovedAmountByOrderId($params['id_order']);
 
-            $refundRepository = new BTiPay\Repository\RefundRepository();
+            $refundRepository = $services->getRefundRepository();
             $refundedAmount = $refundRepository->getTotalRefundedAmountByOrderId($params['id_order']);
 
             $maxTotalAmountPaid -= $refundedAmount;
@@ -423,13 +365,14 @@ class Btipay extends PaymentModule
 
         $order = new \Order($orderId);
         if (!Validate::isLoadedObject($order)) {
-            $this->get('btipay.logger')->error('Order not found for ID: ' . $orderId);
+            $this->getModuleServices()->getLogger()->error('Order not found for ID: ' . $orderId);
 
             return $this->displayError('Order not found.');
         }
 
-        $paymentRepository = new BTiPay\Repository\PaymentRepository();
-        $refundRepository = new BTiPay\Repository\RefundRepository();
+        $services = $this->getModuleServices();
+        $paymentRepository = $services->getPaymentRepository();
+        $refundRepository = $services->getRefundRepository();
 
         $payments = $paymentRepository->findPaymentsByOrderIdAsArray($orderId);
         $refunds = $refundRepository->findAllRefundsByOrderIdArray($orderId);
@@ -462,8 +405,7 @@ class Btipay extends PaymentModule
      */
     public function hookDisplayCustomerAccount(array $params)
     {
-        /** @var BTiPay\Config\BTiPayConfig $config */
-        $config = $this->get('btipay.config');
+        $config = $this->getModuleServices()->getConfig();
 
         if ($config->isCardOnFileEnabled()) {
             $this->context->smarty->assign([
@@ -481,8 +423,8 @@ class Btipay extends PaymentModule
 
     public function hookActionOrderStatusUpdate($params)
     {
-        /** @var BTiPay\Config\BTiPayConfig $config */
-        $config = $this->get('btipay.config');
+        $services = $this->getModuleServices();
+        $config = $services->getConfig();
 
         if (!$config->isRefundOnStatusChangeEnabled()) {
             return;
@@ -503,8 +445,7 @@ class Btipay extends PaymentModule
                 'amount' => $totalRefundAmount,
             ];
 
-            /** @var BTiPay\Service\RefundService $refundService */
-            $refundService = $this->get('btipay.refund.service');
+            $refundService = $services->getRefundService();
             try {
                 $refundService->customRefund($data, $data['type'], $data['amount']);
             } catch (Exception $e) {
@@ -527,8 +468,8 @@ class Btipay extends PaymentModule
         $btiPayOption->setCallToActionText($this->l('Pay by BT iPAY'));
         $btiPayOption->setAction($this->context->link->getModuleLink($this->name, 'payment', [], true));
 
-        /** @var BTiPay\Config\BTiPayConfig $config */
-        $config = $this->get('btipay.config');
+        $services = $this->getModuleServices();
+        $config = $services->getConfig();
 
         $savedCards = [];
         $haveCards = false;
@@ -537,12 +478,11 @@ class Btipay extends PaymentModule
         if ($config->isCardOnFileEnabled()) {
             if ($this->context->customer->isLogged()) {
                 try {
-                    /** @var BTiPay\Repository\CardRepository $cardRepository */
-                    $cardRepository = $this->get('btipay.card_repository');
+                    $cardRepository = $services->getCardRepository();
                     $savedCards = $cardRepository->findEnabledByCustomerId($this->context->customer->id);
                     $haveCards = is_array($savedCards) && count($savedCards) > 0;
                 } catch (Exception $e) {
-                    $this->get('btipay.logger')->error('Failed to retrieve saved cards: ' . $e->getMessage());
+                    $services->getLogger()->error('Failed to retrieve saved cards: ' . $e->getMessage());
                 }
 
                 $isCustomer = true;
@@ -582,8 +522,7 @@ class Btipay extends PaymentModule
      */
     private function isAvailable($params)
     {
-        /** @var BTiPay\Validator\Availability\AvailabilityValidatorPool $availabilityValidator */
-        $availabilityValidator = $this->get('btipay.validator.availability');
+        $availabilityValidator = $this->getModuleServices()->getAvailabilityValidator();
         if (!$availabilityValidator->validate($params)) {
             return false;
         }
@@ -594,9 +533,9 @@ class Btipay extends PaymentModule
     public function getLogger()
     {
         if ($this->logger === null) {
-            if (method_exists($this, 'get') && $this->getContainer()->has('btipay.logger')) {
-                $this->logger = $this->get('btipay.logger');
-            } else {
+            try {
+                $this->logger = $this->getModuleServices()->getLogger();
+            } catch (\Exception $e) {
                 $this->logger = BTiPay\Logger\LoggerFactory::createLogger('btipay');
             }
         }
@@ -622,6 +561,7 @@ class Btipay extends PaymentModule
 
     private function clearCache()
     {
-        $this->get('prestashop.core.cache.clearer.cache_clearer_chain')->clear();
+        \PrestaShop\PrestaShop\Adapter\SymfonyContainer::getInstance()
+            ->get('prestashop.core.cache.clearer.cache_clearer_chain')->clear();
     }
 }

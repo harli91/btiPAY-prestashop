@@ -23,8 +23,8 @@ BT iPay PrestaShop Payment Module is developed to integrate Banca Transilvania's
 
 To ensure a smooth operation of the BT iPay payment module, the following requirements should be met:
 - A valid Banca Transilvania account with BT iPay service activated.
-- PrestaShop 8.1.x.
-- PHP 7.3 or higher.
+- PrestaShop 9.0.x or higher.
+- PHP 8.1 or higher.
 
 ### Installation
 
@@ -53,4 +53,12 @@ For transparency into our release cycle and in striving to maintain backward com
 **Note:** This document is prepared with care and continuously updated. However, it may contain typographical errors or inaccuracies.
 
 ### CHANGELOG
+- [v.2.0.0] - PrestaShop 9 only release
+  - **BREAKING:** Requires PrestaShop 9.0.0 or higher
+  - **BREAKING:** Requires PHP 8.1 or higher
+  - Full dependency injection implementation
+  - Removed all legacy PrestaShop 1.7.x and 8.x compatibility code
+  - Created service classes for controllers
+  - Migrated all controllers to use dependency injection
+  - Modern PHP 8.1+ syntax (readonly properties, match expressions)
 - [v.1.0.1] - Added Romanian translation.

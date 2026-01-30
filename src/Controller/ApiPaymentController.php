@@ -1,22 +1,4 @@
 <?php
-/**
- * Copyright since 2007 PrestaShop SA and Contributors
- * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License version 3.0
- * that is bundled with this package in the file LICENSE.md.
- * It is also available through the world-wide-web at this URL:
- * https://opensource.org/licenses/AFL-3.0
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@prestashop.com so we can send you a copy immediately.
- *
- * @author    PrestaShop SA and Contributors <contact@prestashop.com>
- * @copyright Since 2007 PrestaShop SA and Contributors
- * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
- */
 
 namespace BTiPay\Controller;
 
@@ -26,79 +8,73 @@ if (!defined('_PS_VERSION_')) {
 
 use BTiPay\Service\CaptureService;
 use BTiPay\Service\RefundService;
-use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
+use BTiPay\Service\CancelService;
+use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class ApiPaymentController extends FrameworkBundleAdminController
+class ApiPaymentController extends PrestaShopAdminController
 {
-    public function handleRequest(Request $request, $action, $orderId)
+    public function __construct(
+        private readonly CaptureService $captureService,
+        private readonly RefundService $refundService,
+        private readonly CancelService $cancelService
+    ) {
+    }
+
+    public function handleRequest(Request $request, $action, $orderId): JsonResponse
     {
-        $amount = $request->request->get('amount') ?? null;
+        $amount = $request->request->get('amount');
 
         if (!is_numeric($orderId)) {
-            return $this->addFlashError('Invalid value for `orderId`');
+            return $this->jsonError('Invalid value for `orderId`');
         }
-
-        $type = 'btipay_api_payment_handle';
 
         $data['order'] = new \Order($orderId);
+        $type = 'btipay_api_payment_handle';
 
-        switch ($action) {
-            case 'capture':
-                return $this->handleCapture($data, $type, $amount);
-            case 'refund':
-                return $this->handleRefund($data, $type, $amount);
-            case 'cancel':
-                return $this->handleCancel($data, $type, $amount);
-            default:
-                return new JsonResponse(['error' => 'Unknown action'], Response::HTTP_BAD_REQUEST);
-        }
+        return match ($action) {
+            'capture' => $this->handleCapture($data, $type, $amount),
+            'refund' => $this->handleRefund($data, $type, $amount),
+            'cancel' => $this->handleCancel($data, $type, $amount),
+            default => new JsonResponse(['error' => 'Unknown action'], Response::HTTP_BAD_REQUEST),
+        };
     }
 
-    private function handleCapture($data, $type, $amount)
+    private function handleCapture(array $data, string $type, ?string $amount): JsonResponse
     {
         try {
-            /** @var CaptureService $captureService */
-            $captureService = $this->get('btipay.capture.service');
-            $captureService->execute($data, $type, $amount);
-
+            $this->captureService->execute($data, $type, $amount);
             return new JsonResponse(['success' => true]);
         } catch (\Exception $e) {
-            return $this->addFlashError($e->getMessage());
+            return $this->jsonError($e->getMessage());
         }
     }
 
-    private function handleRefund($data, $type, $amount)
+    private function handleRefund(array $data, string $type, ?string $amount): JsonResponse
     {
         try {
-            /** @var RefundService $refundService */
-            $refundService = $this->get('btipay.refund.service');
-            $result = $refundService->customRefund($data, $type, $amount);
-
+            $result = $this->refundService->customRefund($data, $type, $amount);
             return new JsonResponse(['success' => true, 'message' => $result]);
         } catch (\Exception $e) {
-            return $this->addFlashError($e->getMessage());
+            return $this->jsonError($e->getMessage());
         }
     }
 
-    private function handleCancel($data, $type, $amount)
+    private function handleCancel(array $data, string $type, ?string $amount): JsonResponse
     {
         try {
-            $cancelService = $this->get('btipay.cancel.service');
-            $result = $cancelService->execute($data, $type, $amount);
-
+            $result = $this->cancelService->execute($data, $type, $amount);
             return new JsonResponse(['success' => true, 'message' => $result]);
         } catch (\Exception $e) {
-            return $this->addFlashError($e->getMessage());
+            return $this->jsonError($e->getMessage());
         }
     }
 
-    private function addFlashError($message)
+    private function jsonError(string $message): JsonResponse
     {
         $this->addFlash('error', $message);
-
         return new JsonResponse(['error' => true, 'message' => $message], Response::HTTP_BAD_REQUEST);
     }
 }

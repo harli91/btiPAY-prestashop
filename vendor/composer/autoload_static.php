@@ -7,29 +7,24 @@ namespace Composer\Autoload;
 class ComposerStaticInit7a0837b6064a206ddc7b397b8523d32e
 {
     public static $prefixLengthsPsr4 = array (
-        'B' => 
+        'B' =>
         array (
             'BTransilvania\\Api\\' => 18,
-            'BTiPay\\Tests\\' => 13,
             'BTiPay\\Controllers\\' => 19,
             'BTiPay\\' => 7,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'BTransilvania\\Api\\' => 
+        'BTransilvania\\Api\\' =>
         array (
             0 => __DIR__ . '/..' . '/banca-transilvania/ipay-sdk/src',
         ),
-        'BTiPay\\Tests\\' => 
-        array (
-            0 => __DIR__ . '/../..' . '/tests',
-        ),
-        'BTiPay\\Controllers\\' => 
+        'BTiPay\\Controllers\\' =>
         array (
             0 => __DIR__ . '/../..' . '/controllers',
         ),
-        'BTiPay\\' => 
+        'BTiPay\\' =>
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
@@ -85,14 +80,18 @@ class ComposerStaticInit7a0837b6064a206ddc7b397b8523d32e
         'BTiPay\\Response\\SaveTransactionHandler' => __DIR__ . '/../..' . '/src/Response/SaveTransactionHandler.php',
         'BTiPay\\Response\\UpdateOrderPaymentHandler' => __DIR__ . '/../..' . '/src/Response/UpdateOrderPaymentHandler.php',
         'BTiPay\\Response\\UpdateStatusHandler' => __DIR__ . '/../..' . '/src/Response/UpdateStatusHandler.php',
+        'BTiPay\\Service\\Account\\AccountFlowService' => __DIR__ . '/../..' . '/src/Service/Account/AccountFlowService.php',
         'BTiPay\\Service\\CancelService' => __DIR__ . '/../..' . '/src/Service/CancelService.php',
         'BTiPay\\Service\\CaptureService' => __DIR__ . '/../..' . '/src/Service/CaptureService.php',
         'BTiPay\\Service\\CardService' => __DIR__ . '/../..' . '/src/Service/CardService.php',
+        'BTiPay\\Service\\ModuleServices' => __DIR__ . '/../..' . '/src/Service/ModuleServices.php',
         'BTiPay\\Service\\OrderService' => __DIR__ . '/../..' . '/src/Service/OrderService.php',
         'BTiPay\\Service\\PaymentDetailsService' => __DIR__ . '/../..' . '/src/Service/PaymentDetailsService.php',
+        'BTiPay\\Service\\Payment\\PaymentFlowService' => __DIR__ . '/../..' . '/src/Service/Payment/PaymentFlowService.php',
+        'BTiPay\\Service\\Payment\\ReturnFlowService' => __DIR__ . '/../..' . '/src/Service/Payment/ReturnFlowService.php',
         'BTiPay\\Service\\RefundCommandService' => __DIR__ . '/../..' . '/src/Service/RefundCommandService.php',
         'BTiPay\\Service\\RefundService' => __DIR__ . '/../..' . '/src/Service/RefundService.php',
-        'BTiPay\\Tests\\Unit\\OrderBundleRequestBuilderTest' => __DIR__ . '/../..' . '/tests/Unit/OrderBundleRequestBuilderTest.php',
+        'BTiPay\\Service\\Webhook\\WebhookFlowService' => __DIR__ . '/../..' . '/src/Service/Webhook/WebhookFlowService.php',
         'BTiPay\\Validator\\Availability\\AvailabilityValidatorPool' => __DIR__ . '/../..' . '/src/Validator/Availability/AvailabilityValidatorPool.php',
         'BTiPay\\Validator\\Availability\\CountryValidator' => __DIR__ . '/../..' . '/src/Validator/Availability/CountryValidator.php',
         'BTiPay\\Validator\\Availability\\CurrencyValidator' => __DIR__ . '/../..' . '/src/Validator/Availability/CurrencyValidator.php',
@@ -164,6 +163,7 @@ class ComposerStaticInit7a0837b6064a206ddc7b397b8523d32e
         'BtipayRedirectModuleFrontController' => __DIR__ . '/../..' . '/controllers/front/redirect.php',
         'BtipayReturnModuleFrontController' => __DIR__ . '/../..' . '/controllers/front/return.php',
         'BtipayWebhookModuleFrontController' => __DIR__ . '/../..' . '/controllers/front/webhook.php',
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

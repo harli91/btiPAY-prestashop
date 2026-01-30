@@ -230,3 +230,22 @@ services:
     arguments:
       - '@btipay.payment_repository'
       - '@btipay.logger'
+
+  btipay.validator.availability:
+    class: BTiPay\Validator\Availability\AvailabilityValidatorPool
+    public: true
+    arguments:
+      - '@btipay.config'
+
+  btipay.module.services:
+    class: BTiPay\Service\ModuleServices
+    public: true
+    arguments:
+      - '@btipay.config'
+      - '@btipay.logger'
+      - '@btipay.card_repository'
+      - '@btipay.payment_repository'
+      - '@btipay.refund_repository'
+      - '@btipay.refund.service'
+      - '@btipay.validator.availability'
+      - '@router'

@@ -3,7 +3,7 @@
   "description": "BT iPay PrestaShop Payment Module",
   "homepage": "https://bancatransilvania.com/",
   "license": "AFL-3.0",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "authors": [
     {
       "name": "Banca Transilvania",
@@ -35,7 +35,7 @@
     }
   },
   "require": {
-    "php": ">=7.4",
+    "php": ">=8.1",
     "banca-transilvania/ipay-sdk": "1.1.7"
   },
   "autoload": {
@@ -60,7 +60,7 @@
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.64",
-    "phpunit/phpunit": "^9.5",
+    "phpunit/phpunit": "^10.5",
     "prestashop/autoindex": "^2.1",
     "prestashop/php-dev-tools": "^5.0"
   }

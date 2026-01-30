@@ -110,7 +110,17 @@ services:
       - "@btipay.refund.service"
     public: false
 
-  btipay.form.extension.cancel_product:
+  BTiPay\Form\CancelProductFormExtension:
     class: BTiPay\Form\CancelProductFormExtension
     tags:
       - { name: form.type_extension, extended_type: PrestaShopBundle\Form\Admin\Sell\Order\CancelProductType }
+
+  BTiPay\Controller\ApiPaymentController:
+    class: BTiPay\Controller\ApiPaymentController
+    public: true
+    arguments:
+      - '@btipay.capture.service'
+      - '@btipay.refund.service'
+      - '@btipay.cancel.service'
+    tags:
+      - { name: controller.service_arguments }

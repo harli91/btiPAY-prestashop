@@ -47,6 +47,16 @@ class BtipayAccountModuleFrontController extends ModuleFrontController
      */
     private $cardRepository;
 
+    private ?\BTiPay\Service\Account\AccountFlowService $flowService = null;
+
+    private function getFlowService(): \BTiPay\Service\Account\AccountFlowService
+    {
+        if ($this->flowService === null) {
+            $this->flowService = $this->module->getService('btipay.account_flow.service');
+        }
+        return $this->flowService;
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -54,9 +64,9 @@ class BtipayAccountModuleFrontController extends ModuleFrontController
     {
         parent::initContent();
 
-        /** @var BTiPay\Config\BTiPayConfig $config */
-        $config = $this->get('btipay.config');
-        $this->cardRepository = $this->get('btipay.card_repository');
+        $flowService = $this->getFlowService();
+        $config = $flowService->getConfig();
+        $this->cardRepository = $flowService->getCardRepository();
 
         if ($config->isCardOnFileEnabled()) {
             if (Tools::isSubmit('action')) {
@@ -230,10 +240,9 @@ class BtipayAccountModuleFrontController extends ModuleFrontController
      */
     private function addCard(string $token = '')
     {
-        /** @var BTiPay\Facade\Context $context */
-        $context = $this->get('btipay.facade.context');
-        /** @var BTiPay\Service\CardService $cardService */
-        $cardService = $this->get('btipay.card.service');
+        $flowService = $this->getFlowService();
+        $context = $flowService->getContext();
+        $cardService = $flowService->getCardService();
         /** @var RegisterResponseModel $response */
         $response = $cardService->addCard($context, $token);
 
@@ -257,8 +266,7 @@ class BtipayAccountModuleFrontController extends ModuleFrontController
             throw new Exception($this->translate('Binding Id is missing.'));
         }
 
-        /** @var BTiPay\Service\PaymentDetailsService $paymentDetailsService */
-        $paymentDetailsService = $this->get('btipay.payment_details.service');
+        $paymentDetailsService = $this->getFlowService()->getPaymentDetailsService();
 
         /** @var BTransilvania\Api\Model\Response\GetOrderStatusResponseModel $response */
         $response = $paymentDetailsService->get($ipayId);
@@ -324,8 +332,7 @@ class BtipayAccountModuleFrontController extends ModuleFrontController
      */
     private function toggleStatus(string $ipay_card_id, bool $enable)
     {
-        /** @var BTiPay\Service\CardService $cardService */
-        $cardService = $this->get('btipay.card.service');
+        $cardService = $this->getFlowService()->getCardService();
 
         return $cardService->toggleCardStatus($ipay_card_id, $enable);
     }

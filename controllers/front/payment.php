@@ -1,72 +1,51 @@
 <?php
-/**
- * Copyright since 2007 PrestaShop SA and Contributors
- * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License version 3.0
- * that is bundled with this package in the file LICENSE.md.
- * It is also available through the world-wide-web at this URL:
- * https://opensource.org/licenses/AFL-3.0
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@prestashop.com so we can send you a copy immediately.
- *
- * @author    PrestaShop SA and Contributors <contact@prestashop.com>
- * @copyright Since 2007 PrestaShop SA and Contributors
- * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
- */
 
 use BTiPay\Config\BTiPayConfig;
+use BTiPay\Service\Payment\PaymentFlowService;
 use BTransilvania\Api\Model\Response\RegisterResponseModel;
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-/**
- * This Controller simulate an external payment gateway
- */
 class BtipayPaymentModuleFrontController extends ModuleFrontController
 {
-    /** @var bool */
-    public $ssl = true;
+    public bool $ssl = true;
+    private ?PaymentFlowService $flowService = null;
 
-    /**
-     * {@inheritdoc}
-     */
-    public function postProcess()
+    private function getFlowService(): PaymentFlowService
     {
-        /** @var BTiPay\Facade\Context $context */
-        $context = $this->get('btipay.facade.context');
-        /** @var BTiPayConfig $btConfig */
-        $btConfig = $this->get('btipay.config');
-        /** @var Monolog\Logger $btLogger */
-        $btLogger = $this->get('btipay.logger');
+        if ($this->flowService === null) {
+            $this->flowService = $this->module->getService('btipay.payment_flow.service');
+        }
+        return $this->flowService;
+    }
+
+    public function postProcess(): void
+    {
+        $flowService = $this->getFlowService();
+        $context = $flowService->getContext();
+        $btConfig = $flowService->getConfig();
+        $btLogger = $flowService->getLogger();
 
         if (!Tools::getIsset('orderId')) {
-            if (false === $this->checkIfContextIsValid() || false === $this->checkIfPaymentOptionIsAvailable()) {
+            if (!$this->checkIfContextIsValid() || !$this->checkIfPaymentOptionIsAvailable()) {
                 Tools::redirect($this->context->link->getPageLink(
                     'order',
                     true,
                     (int) $this->context->language->id,
-                    [
-                        'step' => 1,
-                    ]
+                    ['step' => 1]
                 ));
             }
 
             $customer = new Customer($this->context->cart->id_customer);
 
-            if (false === Validate::isLoadedObject($customer)) {
+            if (!Validate::isLoadedObject($customer)) {
                 Tools::redirect($this->context->link->getPageLink(
                     'order',
                     true,
                     (int) $this->context->language->id,
-                    [
-                        'step' => 1,
-                    ]
+                    ['step' => 1]
                 ));
             }
 
@@ -94,34 +73,26 @@ class BtipayPaymentModuleFrontController extends ModuleFrontController
 
             if (empty($secureKey)) {
                 $this->displayError([$this->translate('Missing secure key.')]);
-
-                return false;
+                return;
             }
+
             $order = new Order($orderId);
 
             if (!Validate::isLoadedObject($order)) {
-                $errorMessage = $this->translate('Order not found.');
-                $this->get('btipay.logger')->error($errorMessage);
-                $this->displayError([$errorMessage]);
-
-                return false;
+                $btLogger->error('Order not found.');
+                $this->displayError([$this->translate('Order not found.')]);
+                return;
             }
 
             if ($order->secure_key !== $secureKey) {
-                $errorMessage = $this->translate('Invalid secure key.');
-                $this->get('btipay.logger')->error($errorMessage);
-                $this->displayError([$errorMessage], $orderId);
-
-                return false;
+                $btLogger->error('Invalid secure key.');
+                $this->displayError([$this->translate('Invalid secure key.')], $orderId);
+                return;
             }
         }
 
-        /* @var \BTiPay\Command\ActionCommand $orderCommand */
-        if ($btConfig->getPhase() == BTiPayConfig::ONE_PHASE) {
-            $orderCommand = $this->get('btipay.order.command');
-        } else {
-            $orderCommand = $this->get('btipay.authorize.command');
-        }
+        $orderCommand = $flowService->getOrderCommand();
+        $errors = [];
 
         try {
             $useNewCard = Tools::getValue('bt_ipay_use_new_card', 'no') === 'yes';
@@ -148,53 +119,38 @@ class BtipayPaymentModuleFrontController extends ModuleFrontController
             if ($response->hasRedirect()) {
                 Tools::redirect($response->getRedirectUrl());
             }
-        } catch (BTiPay\Exception\CommandException $exception) {
-            $errors[] = $this->translate($exception->getMessage());
-            $btLogger->error($exception->getMessage());
-        } catch (BTransilvania\Api\Exception\ApiException $exception) {
-            $errors[] = $this->translate($exception->getPlainMessage());
-            $btLogger->error($exception->getMessage());
-        } catch (Exception $exception) {
+        } catch (\BTiPay\Exception\CommandException $e) {
+            $errors[] = $this->translate($e->getMessage());
+            $btLogger->error($e->getMessage());
+        } catch (\BTransilvania\Api\Exception\ApiException $e) {
+            $errors[] = $this->translate($e->getPlainMessage());
+            $btLogger->error($e->getMessage());
+        } catch (\Exception $e) {
             $errors[] = $this->translate('An error occurred. Please contact us for more details.');
-            $btLogger->error($exception->getMessage());
+            $btLogger->error($e->getMessage());
         }
 
         if (!empty($errors)) {
             $this->displayError($errors, $orderId, $secureKey);
-
-            return false;
         }
     }
 
-    /**
-     * Check if the context is valid
-     *
-     * @return bool
-     */
-    private function checkIfContextIsValid()
+    private function checkIfContextIsValid(): bool
     {
-        return true === Validate::isLoadedObject($this->context->cart)
-            && true === Validate::isUnsignedInt($this->context->cart->id_customer)
-            && true === Validate::isUnsignedInt($this->context->cart->id_address_delivery)
-            && true === Validate::isUnsignedInt($this->context->cart->id_address_invoice);
+        return Validate::isLoadedObject($this->context->cart)
+            && Validate::isUnsignedInt($this->context->cart->id_customer)
+            && Validate::isUnsignedInt($this->context->cart->id_address_delivery)
+            && Validate::isUnsignedInt($this->context->cart->id_address_invoice);
     }
 
-    /**
-     * Check that this payment option is still available in case the customer changed
-     * his address just before the end of the checkout process
-     *
-     * @return bool
-     */
-    private function checkIfPaymentOptionIsAvailable()
+    private function checkIfPaymentOptionIsAvailable(): bool
     {
-        $availabilityValidator = $this->get('btipay.validator.availability');
-        $params['cart'] = $this->context->cart;
-        if (!$availabilityValidator->validate($params)) {
+        $availabilityValidator = $this->getFlowService()->getAvailabilityValidator();
+        if (!$availabilityValidator->validate(['cart' => $this->context->cart])) {
             return false;
         }
 
         $modules = Module::getPaymentModules();
-
         if (empty($modules)) {
             return false;
         }
@@ -208,34 +164,27 @@ class BtipayPaymentModuleFrontController extends ModuleFrontController
         return false;
     }
 
-    protected function displayError($errors = [], $invoicenumber = null, $secureKey = null)
+    protected function displayError(array $errors = [], ?int $invoicenumber = null, ?string $secureKey = null): void
     {
-        if (empty($errors)) {
-            $errorMessage = $this->translate(
-                'Your payment was unsuccessful. Please try again or choose another payment method.'
-            );
-        } else {
-            $errorMessage = implode(PHP_EOL, $errors);
-        }
-        $this->context->smarty->assign(
-            [
-                'order_id' => $invoicenumber,
-                'errors' => $errorMessage,
-                'payment_link' => $this->context->link->getModuleLink(
-                    $this->module->name,
-                    'payment',
-                    [
-                        'orderId' => $invoicenumber,
-                        'secureKey' => $secureKey,
-                    ],
-                    true),
-            ]
-        );
+        $errorMessage = empty($errors)
+            ? $this->translate('Your payment was unsuccessful. Please try again or choose another payment method.')
+            : implode(PHP_EOL, $errors);
+
+        $this->context->smarty->assign([
+            'order_id' => $invoicenumber,
+            'errors' => $errorMessage,
+            'payment_link' => $this->context->link->getModuleLink(
+                $this->module->name,
+                'payment',
+                ['orderId' => $invoicenumber, 'secureKey' => $secureKey],
+                true
+            ),
+        ]);
 
         $this->setTemplate('module:btipay/views/templates/front/error.tpl');
     }
 
-    private function translate($string)
+    private function translate(string $string): string
     {
         return $this->module->getTranslator()->trans($string, [], 'Modules.Btipay.Btipay');
     }
