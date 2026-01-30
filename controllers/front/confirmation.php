@@ -53,14 +53,23 @@ class BtipayConfirmationModuleFrontController extends ModuleFrontController
         /**
          * If the order has been validated we try to retrieve it
          */
-        $order_id = Order::getOrderByCartId((int) $cart->id);
+        $order_id = $this->module->currentOrder;
 
         if ($order_id && ($secure_key == $customer->secure_key)) {
             /**
              * The order has been placed so we redirect the customer on the confirmation page.
              */
-            $module_id = $this->module->id;
-            Tools::redirect('index.php?controller=order-confirmation&id_cart=' . $cart_id . '&id_module=' . $module_id . '&id_order=' . $order_id . '&key=' . $secure_key);
+            Tools::redirect($this->context->link->getPageLink(
+                'order-confirmation',
+                true,
+                null,
+                [
+                    'id_cart' => $cart_id,
+                    'id_module' => $this->module->id,
+                    'id_order' => $order_id,
+                    'key' => $secure_key,
+                ]
+            ));
         } else {
             /*
              * An error occured and is shown on a new page.

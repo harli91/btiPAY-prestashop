@@ -30,6 +30,7 @@ services:
       - '@btipay.facade.context'
       - '@btipay.card.service'
       - '@btipay.payment_details.service'
+      - '@btipay.logger'
 
   btipay.webhook_flow.service:
     class: BTiPay\Service\Webhook\WebhookFlowService
@@ -38,16 +39,6 @@ services:
       - '@btipay.webhook.service'
       - '@btipay.logger'
       - '@btipay.config'
-
-  btipay.validator.availability:
-    class: BTiPay\Validator\Availability\AvailabilityValidatorPool
-    public: true
-    arguments:
-      - '@btipay.config'
-      - [
-        'BTiPay\Validator\Availability\GeneralValidator',
-        'BTiPay\Validator\Availability\CountryValidator',
-        'BTiPay\Validator\Availability\CurrencyValidator']
 
   btipay.authorize.command:
     class: BTiPay\Command\ActionCommand

@@ -3,7 +3,6 @@ btipay_api_payment_handle:
   methods: [POST]
   defaults:
     _controller: 'BTiPay\Controller\ApiPaymentController::handleRequest'
-    _legacy_controller: false
   requirements:
     action: 'capture|refund|cancel'
     orderId: '\d+'

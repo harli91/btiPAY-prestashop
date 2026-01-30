@@ -24,7 +24,7 @@ class ModuleServices
         private readonly RefundRepository $refundRepository,
         private readonly RefundService $refundService,
         private readonly AvailabilityValidatorPool $availabilityValidator,
-        private readonly RouterInterface $router
+        private readonly ?RouterInterface $router
     ) {
     }
 
@@ -35,5 +35,5 @@ class ModuleServices
     public function getRefundRepository(): RefundRepository { return $this->refundRepository; }
     public function getRefundService(): RefundService { return $this->refundService; }
     public function getAvailabilityValidator(): AvailabilityValidatorPool { return $this->availabilityValidator; }
-    public function getRouter(): RouterInterface { return $this->router; }
+    public function getRouter(): ?RouterInterface { return $this->router; }
 }

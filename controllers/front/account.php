@@ -20,6 +20,7 @@
 
 use BTiPay\Entity\BTIPayCard;
 use BTiPay\Repository\CardRepository;
+use BTiPay\Service\Account\AccountFlowService;
 use BTransilvania\Api\Model\Response\RegisterResponseModel;
 use BTransilvania\Api\Model\Response\ResponseModelInterface;
 
@@ -47,9 +48,9 @@ class BtipayAccountModuleFrontController extends ModuleFrontController
      */
     private $cardRepository;
 
-    private ?\BTiPay\Service\Account\AccountFlowService $flowService = null;
+    private ?AccountFlowService $flowService = null;
 
-    private function getFlowService(): \BTiPay\Service\Account\AccountFlowService
+    private function getFlowService(): AccountFlowService
     {
         if ($this->flowService === null) {
             $this->flowService = $this->module->getService('btipay.account_flow.service');
@@ -65,10 +66,9 @@ class BtipayAccountModuleFrontController extends ModuleFrontController
         parent::initContent();
 
         $flowService = $this->getFlowService();
-        $config = $flowService->getConfig();
         $this->cardRepository = $flowService->getCardRepository();
 
-        if ($config->isCardOnFileEnabled()) {
+        if ($flowService->getConfig()->isCardOnFileEnabled()) {
             if (Tools::isSubmit('action')) {
                 $this->handleCardAction();
             } else {
@@ -344,7 +344,7 @@ class BtipayAccountModuleFrontController extends ModuleFrontController
      */
     private function handleError(Exception $e)
     {
-        $this->module->getLogger()->error($e->getMessage());
+        $this->getFlowService()->getLogger()->error($e->getMessage());
         $this->errors[] = $this->translate('An unexpected error occurred. Please try again later.');
     }
 

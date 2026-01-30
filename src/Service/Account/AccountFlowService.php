@@ -7,6 +7,7 @@ use BTiPay\Facade\Context;
 use BTiPay\Repository\CardRepository;
 use BTiPay\Service\CardService;
 use BTiPay\Service\PaymentDetailsService;
+use Psr\Log\LoggerInterface;
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -19,7 +20,8 @@ class AccountFlowService
         private readonly CardRepository $cardRepository,
         private readonly Context $context,
         private readonly CardService $cardService,
-        private readonly PaymentDetailsService $paymentDetailsService
+        private readonly PaymentDetailsService $paymentDetailsService,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -46,5 +48,10 @@ class AccountFlowService
     public function getPaymentDetailsService(): PaymentDetailsService
     {
         return $this->paymentDetailsService;
+    }
+
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
     }
 }

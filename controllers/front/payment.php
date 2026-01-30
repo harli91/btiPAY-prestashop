@@ -1,6 +1,5 @@
 <?php
 
-use BTiPay\Config\BTiPayConfig;
 use BTiPay\Service\Payment\PaymentFlowService;
 use BTransilvania\Api\Model\Response\RegisterResponseModel;
 
@@ -10,7 +9,7 @@ if (!defined('_PS_VERSION_')) {
 
 class BtipayPaymentModuleFrontController extends ModuleFrontController
 {
-    public bool $ssl = true;
+    public $ssl = true;
     private ?PaymentFlowService $flowService = null;
 
     private function getFlowService(): PaymentFlowService

@@ -9,7 +9,7 @@ if (!defined('_PS_VERSION_')) {
 
 class BtipayReturnModuleFrontController extends ModuleFrontController
 {
-    public bool $ssl = true;
+    public $ssl = true;
     private ?ReturnFlowService $flowService = null;
 
     private function getFlowService(): ReturnFlowService

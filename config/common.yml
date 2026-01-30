@@ -236,6 +236,10 @@ services:
     public: true
     arguments:
       - '@btipay.config'
+      - [
+        'BTiPay\Validator\Availability\GeneralValidator',
+        'BTiPay\Validator\Availability\CountryValidator',
+        'BTiPay\Validator\Availability\CurrencyValidator']
 
   btipay.module.services:
     class: BTiPay\Service\ModuleServices
@@ -248,4 +252,4 @@ services:
       - '@btipay.refund_repository'
       - '@btipay.refund.service'
       - '@btipay.validator.availability'
-      - '@router'
+      - '@?router'

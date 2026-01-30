@@ -70,7 +70,10 @@ class AdminBTiPayCaptureController extends ModuleAdminController
                     'type' => 'link',
                     'label' => $this->trans('View Details', [], 'Modules.Btipay.Btipay'),
                     'class' => 'btn-link',
-                    'href' => $this->context->link->getAdminLink('AdminOrders') . '&viewOrder&id_order=' . Tools::getValue('id_order'),
+                    'href' => $this->context->link->getAdminLink('AdminOrders', true, [], [
+                        'vieworder' => '',
+                        'id_order' => (int) Tools::getValue('id_order'),
+                    ]),
                 ],
             ],
         ];

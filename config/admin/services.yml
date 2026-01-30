@@ -122,5 +122,7 @@ services:
       - '@btipay.capture.service'
       - '@btipay.refund.service'
       - '@btipay.cancel.service'
+    calls:
+      - [setContainer, ['@service_container']]
     tags:
       - { name: controller.service_arguments }
