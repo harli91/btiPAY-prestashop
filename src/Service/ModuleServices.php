@@ -28,12 +28,36 @@ class ModuleServices
     ) {
     }
 
-    public function getConfig(): BTiPayConfig { return $this->config; }
-    public function getLogger(): LoggerInterface { return $this->logger; }
-    public function getCardRepository(): CardRepository { return $this->cardRepository; }
-    public function getPaymentRepository(): PaymentRepository { return $this->paymentRepository; }
-    public function getRefundRepository(): RefundRepository { return $this->refundRepository; }
-    public function getRefundService(): RefundService { return $this->refundService; }
-    public function getAvailabilityValidator(): AvailabilityValidatorPool { return $this->availabilityValidator; }
-    public function getRouter(): ?RouterInterface { return $this->router; }
+    public function getConfig(): BTiPayConfig
+    {
+        return $this->config;
+    }
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger;
+    }
+    public function getCardRepository(): CardRepository
+    {
+        return $this->cardRepository;
+    }
+    public function getPaymentRepository(): PaymentRepository
+    {
+        return $this->paymentRepository;
+    }
+    public function getRefundRepository(): RefundRepository
+    {
+        return $this->refundRepository;
+    }
+    public function getRefundService(): RefundService
+    {
+        return $this->refundService;
+    }
+    public function getAvailabilityValidator(): AvailabilityValidatorPool
+    {
+        return $this->availabilityValidator;
+    }
+    public function getRouter(): ?RouterInterface
+    {
+        return $this->router;
+    }
 }
